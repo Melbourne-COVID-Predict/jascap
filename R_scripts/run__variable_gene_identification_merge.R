@@ -1,17 +1,18 @@
 set.seed(42)
 
 # Read arguments
-args = commandArgs(trailingOnly=TRUE)
+args = commandArgs(trailingOnly = TRUE)
 code_directory = args[[1]]
 input_paths = args[2:(length(args)-1)]
 output_path = args[[length(args)]]
 
-renv::load(project = code_directory)
+#renv::load(project = code_directory)
 
 library(dplyr); library(tidyr); library(ggplot2)
 library(Seurat)
 library(tidyseurat)
 library(glue)
+library(purrr)
 
 # Create dir
 output_path |> dirname() |> dir.create( showWarnings = FALSE)

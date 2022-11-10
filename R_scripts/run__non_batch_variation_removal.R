@@ -14,7 +14,7 @@ input_path_empty_droplets = args[[3]]
 input_path_marged_variable_genes = args[[4]]
 output_path = args[[5]]
 
-renv::load(project = code_directory)
+#renv::load(project = code_directory)
 
 library(DropletUtils)
 library(EnsDb.Hsapiens.v86)

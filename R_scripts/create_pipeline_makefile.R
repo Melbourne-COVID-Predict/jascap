@@ -9,10 +9,12 @@ commands = c()
 tab = "\t"
 
 # Read arguments
-args = commandArgs(trailingOnly=TRUE)
+args = commandArgs(trailingOnly = TRUE)
 modality = args[[1]]
 tissue = args[[2]]
 filtered = args[[3]]
+
+print(modality)
 
 if(!modality %in% c("preprocessing", "slow_pipeline", "fast_pipeline", "complete_pipeline"))
   stop("jascap says: modality (the first argument) should be one of the following: preprocessing, slow_pipeline, fast_pipeline, complete_pipeline")
@@ -28,7 +30,7 @@ reference_azimuth_path = args[[8]]
 # Create dir
 result_directory |> dir.create( showWarnings = FALSE, recursive = TRUE)
 
-renv::activate(project = code_directory)
+#renv::activate(project = code_directory)
 
 library(dplyr); library(tidyr); library(ggplot2)
 library(glue)
@@ -36,8 +38,10 @@ library(here)
 library(stringr)
 library(Seurat)
 library(tidyseurat)
+library(purrr)
+library(readr)
 
-R_code_directory = glue("{code_directory}/R")
+R_code_directory = glue("{code_directory}/R_scripts")
 
 # Check modality
 reference_label_fine = tissue |> when(

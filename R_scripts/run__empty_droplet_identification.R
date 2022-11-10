@@ -3,7 +3,7 @@
 set.seed(42)
 
 # Read arguments
-args = commandArgs(trailingOnly=TRUE)
+args = commandArgs(trailingOnly = TRUE)
 code_directory = args[[1]]
 input_path = args[[2]]
 filtered = args[[3]]
@@ -11,7 +11,7 @@ output_path_result = args[[4]]
 output_path_plot_pdf = args[[5]]
 output_path_plot_rds = args[[6]]
 
-renv::load(project = code_directory)
+#renv::load(project = code_directory)
 
 library(dplyr); library(tidyr); library(ggplot2)
 library(purrr)
@@ -23,6 +23,8 @@ library(DropletUtils)
 library(EnsDb.Hsapiens.v86)
 library(here)
 library(stringr)
+library(readr)
+library(purrr)
 
 significance_threshold = 0.001
 

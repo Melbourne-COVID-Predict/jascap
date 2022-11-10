@@ -1,7 +1,7 @@
 # https://satijalab.org/seurat/articles/multimodal_reference_mapping.html
 
 # Read arguments
-args = commandArgs(trailingOnly=TRUE)
+args = commandArgs(trailingOnly = TRUE)
 code_directory = args[[1]]
 input_metadata = args[[2]]
 input_files = args[3:(length(args)-2)]
@@ -9,10 +9,10 @@ output_path_dataframe = args[[length(args)-1]]
 output_path_plot_umap = args[[length(args)]]
 
 # Divide input
-input_demulatiplexed = input_files[1:(length(input_files)/2)]
+input_demultiplexed = input_files[1:(length(input_files)/2)]
 input_empty_droplets = input_files[((length(input_files)/2)+1):length(input_files)]
 
-renv::load(project = code_directory)
+#renv::load(project = code_directory)
 
 library(dplyr); library(tidyr); library(ggplot2)
 library(Seurat)
@@ -20,6 +20,8 @@ library(tidyseurat)
 library(glue)
 library(purrr)
 library(ggupset)
+
+
 load(glue("{code_directory}/data/theme_multipanel.rda"))
 
 assay_of_choice = "RNA"
@@ -27,13 +29,13 @@ assay_of_choice = "RNA"
 # Create dir
 output_path_dataframe |> dirname() |> dir.create( showWarnings = FALSE, recursive = TRUE)
 
-metadata =
+# metadata =
 
 variable_genes_per_sample =
 
   # Reading input
   tibble(
-    seurat_obj_list = input_demulatiplexed |> map(readRDS),
+    seurat_obj_list = input_demultiplexed |> map(readRDS),
     empty_droplets_obj_list = input_empty_droplets |> map(readRDS)
   ) |>
 
@@ -71,14 +73,14 @@ data_umap =
   unnest(data) %>%
   ScaleData(assay=assay_of_choice, return.only.var.genes=FALSE) %>%
   # Variable genes
-  {
+  { 
     .x = (.)
     VariableFeatures(.x) =
       variable_genes_per_sample |>
       select(sample, variable_genes) |>
       unnest(variable_genes) |>
       add_count(variable_genes) |>
-      filter(n>3) |>
+      filter(n >= min(length(input_demultiplexed), 4)) |>
       pull(variable_genes) |>
       unique()
     .x
