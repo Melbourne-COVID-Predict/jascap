@@ -1,0 +1,125 @@
+---
+title: "Empty droplets"
+author: "Elisa Roesti"
+date: '2022-08-31'
+output: md_document
+---
+
+```{r setup, include=FALSE}
+library(DropletUtils)
+library(tidyverse)
+library(tidyseurat)
+```
+
+```{r}
+# Read arguments
+args = commandArgs(trailingOnly=TRUE)
+input_path_demultiplexed = args[[1]]
+input_path_empty_droplets = args[[2]]
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, results='hide'}
+#Load the data
+files <- input_path_demultiplexed
+empty_files <- input_path_empty_droplets
+empty_files
+
+#combine count dataframe by rows using seurat function merge
+demultiplexed_empty <- 
+  files |>
+  map(readRDS) |>
+  purrr::reduce(merge)
+#read empty information
+empty <- 
+  empty_files |>
+  map(readRDS)
+#convert list empty to dataframe:
+empty_df <- plyr::ldply(empty, rbind)
+#joining empty data information
+demultiplexed_empty_joined <-
+  demultiplexed_empty |>
+  left_join(empty_df, by = ".cell" )
+  
+```
+
+
+Visualize barcode rank plots for each sample
+
+```{r, fig.height=5, fig.width=10,  warning=FALSE, message=FALSE, echo=FALSE}
+#Code used to calculate the ranking (which is already present in our seurat), can be find at https://github.com/Melbourne-COVID-Predict/PBMC/blob/main/analysis/pseudobulk/pseudobulk_analysis_1.Rmd
+#plot the graphs faceted:
+plot_barcode_ranks_RNA = 
+  demultiplexed_empty_joined%>%
+  sample_frac(1) %>% #between 0-1, 1=all cells
+  ggplot2::ggplot(aes(rank, total)) + 
+  geom_point() + 
+  facet_wrap(~sample, nrow=4) + 
+  geom_line(aes(rank, fitted), color="red") + 
+  geom_hline(aes(yintercept = knee), color="dodgerblue") +
+  geom_hline(aes(yintercept = inflection), color="forestgreen") +
+  scale_x_log10() + 
+  scale_y_log10() + 
+  theme_bw() +
+  theme(aspect.ratio=1) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust=1))
+plot_barcode_ranks_RNA
+```
+
+
+```{r}
+test <- demultiplexed_empty_joined %>%  filter(demultiplexed_empty_joined$FDR < 0.001) %>% select(FDR, empty_droplet)
+test |> select(empty_droplet) |> table()
+```
+
+
+
+Number of non-empty droplets, everything above knee is retained.
+
+```{r,  warning=FALSE, message=FALSE, echo=FALSE}
+# Number of non-empty droplets -------------------------------------------------
+summary(demultiplexed_empty_joined$FDR < 0.001)
+```
+
+```{r,  warning=FALSE, message=FALSE, echo=FALSE}
+is.cell <- demultiplexed_empty_joined$FDR <= 0.001
+table(is.cell) #true 81090 cells, 8429 false
+```
+
+Check if p-values are lower-bounded by 'niters' (increase 'niters' if any Limited==TRUE and Sig==FALSE), with niters being: An integer scalar specifying the number of iterations to use for the Monte Carlo p-value calculations.
+
+```{r,warning=FALSE, message=FALSE, echo=FALSE}
+table(Sig=is.cell, Limited=demultiplexed_empty_joined$Limited)
+```
+
+
+MA plot
+
+```{r,  warning=FALSE, message=FALSE, echo=FALSE}
+# average for each group
+extra <- which(demultiplexed_empty_joined$FDR < 0.001)
+amb  <- which(is.na(demultiplexed_empty_joined$FDR))
+extra.mu <- rowSums(demultiplexed_empty_joined@assays$RNA@counts[, extra])
+amb.mu  <- rowSums(demultiplexed_empty_joined@assays$RNA@counts[, amb])
+#define mito and ribo genes and add the plot:
+mito_genes <- grep("^MT-", rownames(demultiplexed_empty_joined[["RNA"]]), value=T)
+ribo_genes <-grep("^RP(S|L)", rownames(demultiplexed_empty_joined[["RNA"]]), value=T)
+# ma plot: mito is green, ribo is red
+col <- rep('black', length(extra.mu))
+col[names(extra.mu) %in% mito_genes] <-'green'
+col[names(extra.mu) %in% ribo_genes] <-'red'
+res <- edgeR::maPlot(extra.mu, amb.mu, normalize = TRUE, col = col)
+#to color according to samples, do I subset first and repeat the MA plot?
+```
+
+(mitochondria genes in green, ribosomal genes in red)
+
+
+
+Histogram of p-values:
+
+```{r,  warning=FALSE, message=FALSE, echo=FALSE}
+hist(demultiplexed_empty_joined$PValue[demultiplexed_empty_joined$Total <= 100 & demultiplexed_empty_joined$Total > 0],
+     main = "Droplets with 0 < libsize <= 100",
+     xlab = "P-value")
+```
