@@ -77,7 +77,7 @@ commands =
   c(
     glue("CATEGORY={suffix}\nMEMORY=10024\nCORES=1\nWALL_TIME=30000"),
     glue("{output_path_empty_droplets} {output_path_plot_pdf} {output_path_plot_rds}:{input_path_demultiplexed}\n{tab}Rscript {R_code_directory}/run{suffix}.R {code_directory} {input_path_demultiplexed} {filtered} {output_path_empty_droplets} {output_path_plot_pdf} {output_path_plot_rds}"),
-    glue("{output_path_report}:{input_path_demultiplexed} {output_path_empty_droplets}\n{tab}Rscript -e rmarkdown::render('{R_code_directory}/empty_droplets_analysis.Rmd {input_path_demultiplexed} {output_path_empty_droplets}')")
+    glue('{output_path_report}:{input_path_demultiplexed} {output_path_empty_droplets}\n{tab}Rscript -e "rmarkdown::render({empty_droplets_analysis.Rmd} {input_path_demultiplexed} {output_path_empty_droplets})"')
   )
 
 
